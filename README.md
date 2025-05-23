@@ -24,6 +24,7 @@ npm run dev
 
 - `GET /`: Endpoint principal, devuelve un mensaje de bienvenida
 - `GET /health`: Endpoint de verificación de salud, devuelve estado 200 si el servidor está funcionando correctamente
+- `GET /api/transactions`: Obtiene datos de transacciones desde un servicio externo (http://ec2-35-90-236-177.us-west-2.compute.amazonaws.com:3000/transactions/)
 
 ## Configuración
 
