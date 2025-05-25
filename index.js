@@ -26,6 +26,10 @@ const swaggerOptions = {
         url: `http://localhost:${PORT}`,
         description: "Servidor de desarrollo",
       },
+      {
+        url: `https://testdata-k7xv.onrender.com`,
+        description: "Servidor de producción",
+      },
     ],
   },
   apis: ["./index.js"], // Path to the API docs
