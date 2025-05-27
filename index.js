@@ -23,12 +23,16 @@ const swaggerOptions = {
     },
     servers: [
       {
+        url: `https://swaggerbackend-vvfy.onrender.com`,
+        description: "Servidor de producción new",
+      },
+      {
         url: `http://localhost:${PORT}`,
         description: "Servidor de desarrollo",
       },
       {
         url: `https://testdata-k7xv.onrender.com`,
-        description: "Servidor de producción",
+        description: "Servidor de producción old",
       },
     ],
   },
