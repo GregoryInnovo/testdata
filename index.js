@@ -1041,6 +1041,244 @@ app.get("/citas/completas", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /citas/usuario/{id}:
+ *   get:
+ *     summary: Obtener todas las citas de un usuario por su ID
+ *     tags: [Citas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de citas del usuario
+ *       404:
+ *         description: Usuario no encontrado o sin citas
+ */
+app.get("/citas/usuario/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar si el usuario existe
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("id", id)
+      .single();
+
+    if (usuarioError || !usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Obtener todas las citas del usuario con información del servicio
+    const { data, error } = await supabase
+      .from("citas")
+      .select(`
+        *,
+        servicio:tipo_servicio(id, nombre, estado)
+      `)
+      .eq("usuario_id", id)
+      .order("dia", { ascending: true });
+
+    if (error) throw error;
+
+    if (data.length === 0) {
+      return res.status(404).json({ message: "El usuario no tiene citas registradas" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error al obtener citas por usuario:", error);
+    res.status(500).json({ error: "Error al obtener las citas del usuario" });
+  }
+});
+
+/**
+ * @swagger
+ * /citas/documento/{tipo}/{numero}:
+ *   get:
+ *     summary: Obtener todas las citas de un usuario por su tipo y número de documento
+ *     tags: [Citas]
+ *     parameters:
+ *       - in: path
+ *         name: tipo
+ *         schema:
+ *           type: string
+ *           enum: [CC, Pasaporte, TI]
+ *         required: true
+ *         description: Tipo de documento del usuario
+ *       - in: path
+ *         name: numero
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Número de documento del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de citas del usuario
+ *       404:
+ *         description: Usuario no encontrado o sin citas
+ */
+app.get("/citas/documento/:tipo/:numero", async (req, res) => {
+  try {
+    const { tipo, numero } = req.params;
+
+    // Buscar el usuario por tipo y número de documento
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("tipo_documento", tipo)
+      .eq("numero_documento", numero)
+      .single();
+
+    if (usuarioError || !usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Obtener todas las citas del usuario con información del servicio
+    const { data, error } = await supabase
+      .from("citas")
+      .select(`
+        *,
+        servicio:tipo_servicio(id, nombre, estado)
+      `)
+      .eq("usuario_id", usuario.id)
+      .order("dia", { ascending: true });
+
+    if (error) throw error;
+
+    if (data.length === 0) {
+      return res.status(404).json({ message: "El usuario no tiene citas registradas" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error al obtener citas por documento:", error);
+    res.status(500).json({ error: "Error al obtener las citas" });
+  }
+});
+
+
+
+/**
+ * @swagger
+ * /citas/CC/{numero}:
+ *   get:
+ *     summary: Obtener todas las citas de un usuario por su número de documento (CC)
+ *     tags: [Citas]
+ *     parameters:
+ *       - in: path
+ *         name: numero
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Número de documento del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de citas del usuario
+ *       404:
+ *         description: Usuario no encontrado o sin citas
+ */
+app.get("/citas/CC/:numero", async (req, res) => {
+  try {
+    const { numero } = req.params;
+
+    // Buscar el usuario por tipo y número de documento
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("tipo_documento", "CC")
+      .eq("numero_documento", numero)
+      .single();
+
+    if (usuarioError || !usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Obtener todas las citas del usuario con información del servicio
+    const { data, error } = await supabase
+      .from("citas")
+      .select(`
+        *,
+        servicio:tipo_servicio(id, nombre, estado)
+      `)
+      .eq("usuario_id", usuario.id)
+      .order("dia", { ascending: true });
+
+    if (error) throw error;
+
+    if (data.length === 0) {
+      return res.status(404).json({ message: "El usuario no tiene citas registradas" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error al obtener citas por documento:", error);
+    res.status(500).json({ error: "Error al obtener las citas" });
+  }
+});
+
+/**
+ * @swagger
+ * /citas/telefono/{telefono}:
+ *   get:
+ *     summary: Obtener todas las citas de un usuario por su número de teléfono
+ *     tags: [Citas]
+ *     parameters:
+ *       - in: path
+ *         name: telefono
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Número de teléfono del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de citas del usuario
+ *       404:
+ *         description: Usuario no encontrado o sin citas
+ */
+app.get("/citas/telefono/:telefono", async (req, res) => {
+  try {
+    const { telefono } = req.params;
+
+    // Buscar el usuario por número de teléfono
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("telefono", telefono)
+      .single();
+
+    if (usuarioError || !usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Obtener todas las citas del usuario con información del servicio
+    const { data, error } = await supabase
+      .from("citas")
+      .select(`
+        *,
+        servicio:tipo_servicio(id, nombre, estado)
+      `)
+      .eq("usuario_id", usuario.id)
+      .order("dia", { ascending: true });
+
+    if (error) throw error;
+
+    if (data.length === 0) {
+      return res.status(404).json({ message: "El usuario no tiene citas registradas" });
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error al obtener citas por teléfono:", error);
+    res.status(500).json({ error: "Error al obtener las citas" });
+  }
+});
 
 /**
  * @swagger
