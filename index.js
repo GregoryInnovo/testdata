@@ -309,6 +309,68 @@ app.put("/citas/:id", async (req, res) => {
 /**
  * @swagger
  * /citas/{id}:
+ *   patch:
+ *     summary: Actualizar parcialmente una cita
+ *     tags: [Citas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID de la cita
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               dia:
+ *                 type: string
+ *                 format: date-time
+ *               tipoServicio:
+ *                 type: string
+ *               duracion:
+ *                 type: integer
+ *               usuarioId:
+ *                 type: string
+ *               estado:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Cita actualizada parcialmente
+ *       404:
+ *         description: Cita no encontrada
+ */
+app.patch("/citas/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Actualizar en Supabase
+    const { data, error } = await supabase
+      .from("citas")
+      .update(updates)
+      .eq("id", id)
+      .select();
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Cita no encontrada" });
+    }
+
+    res.status(200).json(data[0]);
+  } catch (error) {
+    console.error("Error al actualizar parcialmente la cita:", error);
+    res.status(500).json({ error: "Error al actualizar la cita" });
+  }
+});
+
+/**
+ * @swagger
+ * /citas/{id}:
  *   delete:
  *     summary: Eliminar una cita
  *     tags: [Citas]
