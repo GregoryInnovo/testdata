@@ -1286,6 +1286,89 @@ app.get("/citas/telefono/:telefono", async (req, res) => {
 
 /**
  * @swagger
+ * /usuarios/CC/{numero}:
+ *   get:
+ *     summary: Obtener información de un usuario y sus citas por número de documento (CC)
+ *     tags: [Usuarios]
+ *     parameters:
+ *       - in: path
+ *         name: numero
+ *         schema:
+ *           type: string
+ *           example: "1193246872"
+ *         required: true
+ *         description: Número de documento del usuario (CC)
+ *     responses:
+ *       200:
+ *         description: Información del usuario y sus citas
+ *         content:
+ *           application/json:
+ *             example:
+ *               usuario:
+ *                 id: "fb4219e3-d141-4475-a3c3-6a9e94e2b133"
+ *                 nombre_completo: "Juan Pérez"
+ *                 tipo_documento: "CC"
+ *                 numero_documento: "1193246872"
+ *                 telefono: "3001234567"
+ *                 created_at: "2023-08-01T15:30:45Z"
+ *                 updated_at: "2023-08-01T15:30:45Z"
+ *               citas:
+ *                 - id: "a9b9c9d9-e9f9-49a9-b9c9-d9e9f9a9b9c9"
+ *                   dia: "2023-08-15T14:00:00Z"
+ *                   duracion: 60
+ *                   estado: "confirmada"
+ *                   created_at: "2023-08-01T15:30:45Z"
+ *                   updated_at: "2023-08-01T16:45:22Z"
+ *                   servicio:
+ *                     id: "145310bb-f764-4d21-be4a-95a619d3a3d2"
+ *                     nombre: "Corte de cabello"
+ *                     estado: "activo"
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+app.get("/usuarios/CC/:numero", async (req, res) => {
+  try {
+    const { numero } = req.params;
+
+    // Buscar el usuario por tipo y número de documento
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("tipo_documento", "CC")
+      .eq("numero_documento", numero)
+      .single();
+
+    if (usuarioError || !usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Obtener todas las citas del usuario con información del servicio
+    const { data: citas, error: citasError } = await supabase
+      .from("citas")
+      .select(`
+        *,
+        servicio:tipo_servicio(id, nombre, estado)
+      `)
+      .eq("usuario_id", usuario.id)
+      .order("dia", { ascending: true });
+
+    if (citasError) throw citasError;
+
+    // Devolver tanto la información del usuario como sus citas
+    res.status(200).json({
+      usuario,
+      citas: citas.length > 0 ? citas : []
+    });
+  } catch (error) {
+    console.error("Error al obtener usuario y citas:", error);
+    res.status(500).json({ error: "Error al obtener la información del usuario y sus citas" });
+  }
+});
+
+/**
+ * @swagger
  * /horarios/todos:
  *   get:
  *     summary: Obtener todos los horarios disponibles para el próximo mes
