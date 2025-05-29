@@ -29,11 +29,7 @@ const swaggerOptions = {
       {
         url: `http://localhost:${PORT}`,
         description: "Servidor de desarrollo",
-      },
-      {
-        url: `https://testdata-k7xv.onrender.com`,
-        description: "Servidor de producción old",
-      },
+      }
     ],
   },
   apis: ["./index.js"], // Path to the API docs
@@ -218,6 +214,120 @@ app.post("/citas", async (req, res) => {
           tipo_servicio: tipoServicio,
           duracion,
           usuario_id: usuarioId,
+          estado: "pendiente",
+        },
+      ])
+      .select();
+
+    if (error) throw error;
+
+    res.status(201).json(data[0]);
+  } catch (error) {
+    console.error("Error al crear cita:", error);
+    res.status(500).json({ error: "Error al crear la cita" });
+  }
+});
+
+
+/**
+ * @swagger
+ * /citasByTypeDoc:
+ *   post:
+ *     summary: Crear una nueva cita usando tipo y número de documento
+ *     tags: [Citas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - dia
+ *               - tipoServicio
+ *               - duracion
+ *               - tipoDocumento
+ *               - numeroDocumento
+ *             properties:
+ *               dia:
+ *                 type: string
+ *                 format: date-time
+ *               tipoServicio:
+ *                 type: string
+ *               duracion:
+ *                 type: integer
+ *               tipoDocumento:
+ *                 type: string
+ *                 enum: [CC, Pasaporte, TI]
+ *               numeroDocumento:
+ *                 type: string
+ *           example:
+ *             dia: "2023-08-15T10:30:00Z"
+ *             tipoServicio: "145310bb-f764-4d21-be4a-95a619d3a3d2"
+ *             duracion: 45
+ *             tipoDocumento: "CC"
+ *             numeroDocumento: "1193246872"
+ *     responses:
+ *       201:
+ *         description: Cita creada exitosamente
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "a9b9c9d9-e9f9-49a9-b9c9-d9e9f9a9b9c9"
+ *               dia: "2023-08-15T10:30:00Z"
+ *               tipo_servicio: "145310bb-f764-4d21-be4a-95a619d3a3d2"
+ *               duracion: 45
+ *               usuario_id: "fb4219e3-d141-4475-a3c3-6a9e94e2b133"
+ *               estado: "pendiente"
+ *               created_at: "2023-08-01T15:30:45Z"
+ *               updated_at: "2023-08-01T15:30:45Z"
+ *       400:
+ *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: "Faltan datos requeridos"
+ *       404:
+ *         description: Usuario no encontrado
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: "Usuario no encontrado con ese documento"
+ */
+app.post("/citasByTypeDoc", async (req, res) => {
+  try {
+    const { dia, tipoServicio, duracion, tipoDocumento, numeroDocumento } = req.body;
+
+    // Validación básica
+    if (!dia || !tipoServicio || !duracion || !tipoDocumento || !numeroDocumento) {
+      return res.status(400).json({ error: "Faltan datos requeridos" });
+    }
+
+    // Buscar el usuario por tipo y número de documento
+    const { data: usuarioData, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("tipo_documento", tipoDocumento)
+      .eq("numero_documento", numeroDocumento)
+      .single();
+
+    if (usuarioError) {
+      console.error("Error al buscar usuario:", usuarioError);
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (!usuarioData) {
+      return res.status(404).json({ error: "Usuario no encontrado con ese documento" });
+    }
+
+    // Insertar en Supabase
+    const { data, error } = await supabase
+      .from("citas")
+      .insert([
+        {
+          dia,
+          tipo_servicio: tipoServicio,
+          duracion,
+          usuario_id: usuarioData.id,
           estado: "pendiente",
         },
       ])
